@@ -1,0 +1,102 @@
+name: terraform
+
+on:
+  pull_request:
+    paths:
+      - "aws-gov/**"
+      - ".github/workflows/terraform.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "aws-gov/**"
+      - ".github/workflows/terraform.yml"
+
+# OIDC only: jobs mint a short-lived token to assume the repo-scoped role.
+# No static AWS keys exist. pull-requests: write covers plan output on PRs.
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+concurrency:
+  # One workspace, one runner: never cancel an in-flight apply.
+  group: terraform-polaris-sim
+  cancel-in-progress: false
+
+env:
+  # TFC holds state and locking only (local execution mode); AWS auth is OIDC.
+  TF_TOKEN_app_terraform_io: ${{ secrets.TFC_TEAM_TOKEN }}
+
+defaults:
+  run:
+    working-directory: aws-gov/dev/polaris-sim
+
+jobs:
+  plan:
+    name: plan
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws-us-gov:iam::393769260826:role/GitHubActionsGncSwInfraApplyRole
+          aws-region: us-gov-west-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false # raw stdout, so the plan pipes cleanly to the summary
+
+      - name: Terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -var create_buckets=true -no-color -out=tfplan 2>&1 | tee plan.txt
+
+      - name: Post plan summary
+        if: always()
+        run: |
+          {
+            echo "#### terraform plan (aws-gov/dev/polaris-sim)"
+            echo '```'
+            grep -E '^(Plan:|No changes\.|Error:)' plan.txt 2>/dev/null || tail -n 30 plan.txt 2>/dev/null || echo "(no plan output captured)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  apply:
+    name: apply
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: aws-gov-dev # reviewer gate attaches here later, no workflow edit needed
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws-us-gov:iam::393769260826:role/GitHubActionsGncSwInfraApplyRole
+          aws-region: us-gov-west-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -var create_buckets=true -no-color -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -input=false tfplan

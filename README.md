@@ -28,9 +28,28 @@ per root module, one TFC workspace per root, all in the TFC `GNC-SW` project.
 4. State is in Terraform Cloud (org MachIndustries, project GNC-SW) — never local, never committed.
 5. The console is read-only (LZ view). Make all changes through Terraform in this repo, not the console.
 
+## Execution model
+
+State, locking, and RBAC live in Terraform Cloud (org MachIndustries, project
+GNC-SW). Execution is LOCAL: TFC remote runners hold no AWS credentials, and the
+org wires no VCS integration. TFC cannot start an apply on its own.
+
+Deploy path:
+
+1. Open a PR that touches `aws-gov/**`. CI posts `terraform plan` as the `plan` check.
+2. Review the plan. Merge to `main` after one approval.
+3. CI applies with the repo-scoped OIDC role `GitHubActionsGncSwInfraApplyRole`.
+   No static AWS keys exist.
+
+Local `terraform plan` stays available for iteration. Treat local applies as
+break-glass only, and tell platform-eng first. CI is the normal path once enabled.
+
+Credentials: SSO for humans, OIDC for CI, a per-user TFC token for local plans.
+No PATs, no shared tokens.
+
 ## Hygiene (non-negotiable)
 
-- No static AWS credentials anywhere. SSO for humans; OIDC for CI when added.
+- No static AWS credentials anywhere. SSO for humans; OIDC for CI.
 - No secrets in `.tf`, tfvars, or committed files.
 - IAM names stay inside `mach-gnc-*`; resource names follow the house contract
   (`mi-<workload>-<env>-<region>` / `mach-gnc-<workload>-<function>`).
