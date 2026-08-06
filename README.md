@@ -20,7 +20,7 @@ aws-gov/
 Growth: `aws-gov/prod/...`, `aws-commercial/dev/...` — same flat pattern, one dir
 per root module, one TFC workspace per root, all in the TFC `GNC-SW` project.
 
-## Workflow (see TED-GUIDE.md for the operator quick-start)
+## Workflow (see SW-TEAM-AWS-TERRAFORM-DEPLOYMENT-QRG.md for the quick-start)
 
 1. `aws sso login --profile gnc-sw-dev` — SSO only, no static keys, no secrets in code
 2. `terraform login` once (TFC token), then in a root dir: `terraform init && terraform plan`

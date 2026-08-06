@@ -1,4 +1,7 @@
-# GNC-SW cloud sim — operator quick-start
+# SW Team — AWS Terraform Deployment QRG
+
+Quick-reference guide for GNC SW team members deploying and running workloads in
+AWS via Terraform. Worked example: the Polaris/Unreal cloud sim.
 
 Account GC-GNC-SW-Dev `393769260826`, region `us-gov-west-1`.
 Your access: `Mach-GNC-SW-Dev-Deploy` SSO role (build + deploy + run). Console UI is
