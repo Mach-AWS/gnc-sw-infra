@@ -4,8 +4,8 @@ Quick-reference guide for GNC SW team members deploying and running workloads in
 AWS via Terraform. Worked example: the Polaris/Unreal cloud sim.
 
 Account GC-GNC-SW-Dev `393769260826`, region `us-gov-west-1`.
-Your access: `Mach-GNC-SW-Dev-Deploy` SSO role (build + deploy + run). Console UI is
-read-only view; all changes go through this repo + the dispatch API.
+Access: the `Mach-GNC-SW-Dev-Deploy` SSO role (build + deploy + run). The console
+is a read-only view; all changes go through this repo and the dispatch API.
 
 ## One-time
 
@@ -39,10 +39,12 @@ read-only view; all changes go through this repo + the dispatch API.
 
 ## Change the infra
 
-10. Edit under `aws-gov/dev/polaris-sim/`, then `terraform plan` → review → `apply`.
-    Workspace: TFC `gc-as-gnc-sw-dev-polaris-sim` (project GNC-SW). Plan before every
-    apply; if the plan shows an IAM denial or something you can't explain, stop and
-    ping platform-eng (Liem) — the boundary blocking you is intentional.
+10. Edit under `aws-gov/dev/polaris-sim/`. Run `terraform plan`, review the plan,
+    then `terraform apply`. Workspace: TFC `gc-as-gnc-sw-dev-polaris-sim`
+    (project GNC-SW).
+11. Plan before every apply. If the plan shows an IAM denial or an unexplained
+    change, stop and contact platform-eng (Liem). The boundary denial is
+    intentional — it marks the edge of the deploy sandbox.
 
 ## Egress reality check (default-deny; these are the ONLY holes)
 
