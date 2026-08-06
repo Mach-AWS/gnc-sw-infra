@@ -39,12 +39,20 @@ is a read-only view; all changes go through this repo and the dispatch API.
 
 ## Change the infra
 
-10. Edit under `aws-gov/dev/polaris-sim/`. Run `terraform plan`, review the plan,
-    then `terraform apply`. Workspace: TFC `gc-as-gnc-sw-dev-polaris-sim`
-    (project GNC-SW).
-11. Plan before every apply. If the plan shows an IAM denial or an unexplained
+State, locking, and RBAC live in TFC. Execution is LOCAL: TFC holds no AWS
+credentials and cannot start an apply. The normal path is CI: open a PR, review
+the posted plan, merge to `main`. CI applies with a repo-scoped OIDC role. No
+static keys. Local `terraform plan` stays the iteration tool. Local applies are
+break-glass only; tell platform-eng first.
+
+10. Edit under `aws-gov/dev/polaris-sim/`. Run `terraform plan` locally to
+    iterate. Open a PR. CI posts the plan as the `plan` check. Workspace: TFC
+    `gc-as-gnc-sw-dev-polaris-sim` (project GNC-SW).
+11. Review the CI plan. Merge to `main` after one approval. CI applies. Reserve
+    local `terraform apply` for break-glass, and tell platform-eng (Liem) first.
+12. Plan before every apply. If the plan shows an IAM denial or an unexplained
     change, stop and contact platform-eng (Liem). The boundary denial is
-    intentional — it marks the edge of the deploy sandbox.
+    intentional: it marks the edge of the deploy sandbox.
 
 ## Egress reality check (default-deny; these are the ONLY holes)
 
